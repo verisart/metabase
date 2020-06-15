@@ -33,7 +33,8 @@ import Draggable from "react-draggable";
 import Ellipsified from "metabase/components/Ellipsified";
 
 const HEADER_HEIGHT = 36;
-const ROW_HEIGHT = 220;
+const ROW_HEIGHT = 36;
+const ROW_HEIGHT_IMAGE = 220;
 const MIN_COLUMN_WIDTH = ROW_HEIGHT;
 const RESIZE_HANDLE_WIDTH = 5;
 // if header is dragged fewer than than this number of pixels we consider it a click instead of a drag
@@ -770,6 +771,8 @@ export default class TableInteractive extends Component {
 
     const headerHeight = this.props.tableHeaderHeight || HEADER_HEIGHT;
 
+    const rowHeight = cols.some(col => this.props.settings.column(col).view_as === 'image') ? ROW_HEIGHT_IMAGE : ROW_HEIGHT;
+    
     return (
       <ScrollSync>
         {({ onScroll, scrollLeft, scrollTop }) => (
@@ -833,7 +836,7 @@ export default class TableInteractive extends Component {
               columnCount={cols.length}
               columnWidth={this.getColumnWidth}
               rowCount={rows.length}
-              rowHeight={ROW_HEIGHT}
+              rowHeight={rowHeight}
               cellRenderer={this.cellRenderer}
               onScroll={({ scrollLeft }) => {
                 this.props.onActionDismissal();
