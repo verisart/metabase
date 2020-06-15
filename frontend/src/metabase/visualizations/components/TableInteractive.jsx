@@ -34,7 +34,7 @@ import Ellipsified from "metabase/components/Ellipsified";
 
 const HEADER_HEIGHT = 36;
 const ROW_HEIGHT = 36;
-const ROW_HEIGHT_IMAGE = 220;
+const ROW_HEIGHT_IMAGE = 170;
 const MIN_COLUMN_WIDTH = ROW_HEIGHT;
 const RESIZE_HANDLE_WIDTH = 5;
 // if header is dragged fewer than than this number of pixels we consider it a click instead of a drag

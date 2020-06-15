@@ -1,12 +1,17 @@
 # Notes for deploying verisart's tweaked changes
 
+This fork contains a tweak to allow rows to appear larger when images are included.
 
-1. Follow build instructions in `developers-guide.md`
-2. Run `cp target/uberjar/metabase.jar bin/docker/`
-3. `cd bin/docker`
-4. `docker login johnverisart`
-5. `docker build -t johnverisart/metabase-verisart .`
-6. `docker push johnverisart/metabase-verisart:latest`
-7. Create a new Elastic Beanstalk App
-8. Use Docker app type
-9. Use ELB.zip for the software 
+1. Follow instructions in `developers-guide.md` to setup all prerequisites
+2. Build everything and push to docker hub
+
+        ./bin/build
+        cp target/uberjar/metabase.jar bin/docker/
+        cd bin/docker
+        docker login johnverisart
+        docker build -t johnverisart/metabase-verisart:v0.35.4-verisart3 .
+        docker push johnverisart/metabase-verisart:v0.35.4-verisart3
+
+3. Create a new Elastic Beanstalk App
+4. Use Docker app type
+5. Use ELB.zip for the software 

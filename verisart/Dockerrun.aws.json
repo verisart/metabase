@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "johnverisart/metabase-verisart:v0.35.4-verisart",
+    "Name": "johnverisart/metabase-verisart:v0.35.4-verisart3",
     "Update": "true"
   },
   "Ports": [
