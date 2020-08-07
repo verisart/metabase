@@ -18,7 +18,12 @@ This fork contains a tweak to allow rows to appear larger when images are includ
 
 ## Merging in changes from the original project
 
-1. Merge into this branch from the original project
-2. Update the version number in `Dockerrun.aws.json` (keep `-verisart` in)
-3. Run `zip ELB.zip Dockerrun.aws.json`
-4. Edit the above instructions to reflect the new version
+1. Go to the RDS instance here https://eu-west-2.console.aws.amazon.com/rds/home?region=eu-west-2#database:id=aafomld8q6eu5l;is-cluster=false
+   and create a new manual DB snapshot
+2. In GitHub, merge into this branch from the original project's main branch
+3. Update the version number in `Dockerrun.aws.json` (keep `-verisart` in)
+4. In this directory, run `zip ELB.zip Dockerrun.aws.json`
+5. Edit the above instructions to reflect the new version
+6. Go to the Elastic Beanstalk app here https://eu-west-2.console.aws.amazon.com/elasticbeanstalk/home?region=eu-west-2#/environment/dashboard?applicationName=metabase-verisart2&environmentId=e-vcyazaip3j
+7. Click Upload and Deploy
+8. Use the `ELB.zip` from this directory
