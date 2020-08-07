@@ -43,15 +43,15 @@
    https://en.wikipedia.org/wiki/Reservoir_sampling"
   [n]
   (fn
-    ([] [(transient []) 0])
+    ([] [[] 0])
     ([[reservoir c] x]
      (let [c   (inc c)
            idx (rand-int c)]
        (cond
-         (<= c n)  [(conj! reservoir x) c]
-         (< idx n) [(assoc! reservoir idx x) c]
+         (<= c n)  [(conj reservoir x) c]
+         (< idx n) [(assoc reservoir idx x) c]
          :else     [reservoir c])))
-    ([[reservoir _]] (persistent! reservoir))))
+    ([[reservoir _]] reservoir)))
 
 (defn mae
   "Given two functions: (fŷ input) and (fy input), returning the predicted and actual values of y
@@ -202,10 +202,11 @@
                                (stats/simple-linear-regression xfn yfn)
                                (best-fit xfn yfn))))
                 (fn [[[y-previous y-current] [x-previous x-current] [offset slope] best-fit]]
-                  (let [unit         (if (or (nil? (:unit datetime))
-                                             (->> datetime :unit mbql.u/normalize-token (= :default)))
-                                       (infer-unit x-previous x-current)
-                                       (:unit datetime))
+                  (let [unit         (let [unit (some-> datetime :unit mbql.u/normalize-token)]
+                                       (if (or (nil? unit)
+                                               (= unit :default))
+                                         (infer-unit x-previous x-current)
+                                         unit))
                         show-change? (valid-period? x-previous x-current unit)]
                     (f/robust-map
                      :last-value     y-current

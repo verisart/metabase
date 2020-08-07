@@ -251,7 +251,9 @@
         [arg->schema body]     (u/optional (every-pred map? #(every? symbol? (keys %))) more)
         validate-param-calls   (validate-params arg->schema)]
     (when-not docstr
-      (log/warn (deferred-trs "Warning: endpoint {0}/{1} does not have a docstring." (ns-name *ns*) fn-name)))
+      ;; Don't i18n this, it's dev-facing only
+      (log/warn (u/format-color 'red "Warning: endpoint %s/%s does not have a docstring. Go add one."
+                  (ns-name *ns*) fn-name)))
     `(def ~(vary-meta fn-name
                       merge
                       (meta method)
@@ -391,7 +393,7 @@
     [400 (tru "Embedding is not enabled.")]))
 
 (defn check-not-archived
-  "Check that the OBJECT exists and is not `:archived`, or throw a `404`. Returns OBJECT as-is if check passes."
+  "Check that the `object` exists and is not `:archived`, or throw a `404`. Returns `object` as-is if check passes."
   [object]
   (u/prog1 object
     (check-404 object)

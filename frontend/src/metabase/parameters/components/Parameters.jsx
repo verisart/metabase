@@ -12,15 +12,16 @@ import { getMetadata } from "metabase/selectors/metadata";
 import querystring from "querystring";
 import cx from "classnames";
 
-import type { QueryParams } from "metabase/meta/types";
+import type { QueryParams } from "metabase-types/types";
 import type {
   ParameterId,
   Parameter,
   ParameterValues,
   ParameterValueOrArray,
-} from "metabase/meta/types/Parameter";
+} from "metabase-types/types/Parameter";
 
-import type { DashboardWithCards } from "metabase/meta/types/Dashboard";
+import type { DashboardWithCards } from "metabase-types/types/Dashboard";
+import Dimension from "metabase-lib/lib/Dimension";
 import type Field from "metabase-lib/lib/metadata/Field";
 import type Metadata from "metabase-lib/lib/metadata/Metadata";
 
@@ -81,9 +82,13 @@ export default class Parameters extends Component {
             // widget, we should start with an array to match.
             value = [value];
           }
+          // field IDs can be either ["field-id", <id>] or ["field-literal", <name>, <type>]
           const fieldIds = parameter.field_ids || [];
-          // $FlowFixMe
-          const fields = fieldIds.map(id => metadata.field(id));
+          const fields = fieldIds.map(
+            id =>
+              // $FlowFixMe
+              metadata.field(id) || Dimension.parseMBQL(id, metadata).field(),
+          );
           // $FlowFixMe
           setParameterValue(parameter.id, parseQueryParam(value, fields));
         }
@@ -263,7 +268,8 @@ export function parseQueryParam(
   }
   // [].every is always true, so only check if there are some fields
   if (fields.length > 0) {
-    if (fields.every(f => f.isNumeric())) {
+    // unix dates fields are numeric but query params shouldn't be parsed as numbers
+    if (fields.every(f => f.isNumeric() && !f.isDate())) {
       return parseFloat(value);
     }
     if (fields.every(f => f.isBoolean())) {

@@ -6,6 +6,7 @@
              [amount :as t.amount]
              [core :as t.core]]
             [metabase.mbql.schema :as mbql.s]
+            [metabase.mbql.schema.helpers :as mbql.s.helpers]
             [metabase.mbql.util.match :as mbql.match]
             [metabase.util
              [i18n :refer [tru]]
@@ -281,6 +282,13 @@
     [:is-null field]  [:=  field nil]
     [:not-null field] [:!= field nil]))
 
+(defn desugar-is-empty-and-not-empty
+  "Rewrite `:is-empty` and `:not-empty` filter clauses as simpler `:=` and `:!=`, respectively."
+  [m]
+  (replace m
+    [:is-empty field]  [:or  [:=  field nil] [:=  field ""]]
+    [:not-empty field] [:and [:!= field nil] [:!= field ""]]))
+
 (defn desugar-time-interval
   "Rewrite `:time-interval` filter clauses as simpler ones like `:=` or `:between`."
   [m]
@@ -357,6 +365,7 @@
       desugar-does-not-contain
       desugar-time-interval
       desugar-is-null-and-not-null
+      desugar-is-empty-and-not-empty
       desugar-inside
       simplify-compound-filter))
 
@@ -418,9 +427,7 @@
     :else
     source-table-id))
 
-(s/defn unwrap-field-clause :- (s/if (partial is-clause? :field-id)
-                                 mbql.s/field-id
-                                 mbql.s/field-literal)
+(s/defn unwrap-field-clause :- (mbql.s.helpers/one-of mbql.s/field-id mbql.s/field-literal)
   "Un-wrap a `Field` clause and return the lowest-level clause it wraps, either a `:field-id` or `:field-literal`."
   [clause :- mbql.s/Field]
   (match-one clause

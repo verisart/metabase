@@ -159,7 +159,8 @@
   {(s/optional-key :database_type) (s/maybe su/NonBlankString)
    (s/optional-key :base_type)     (s/maybe su/FieldType)
    (s/optional-key :special_type)  (s/maybe su/FieldType)
-   (s/optional-key :unit)          (s/maybe DatetimeFieldUnit)})
+   (s/optional-key :unit)          (s/maybe DatetimeFieldUnit)
+   (s/optional-key :name)          (s/maybe su/NonBlankString)})
 
 ;; Arguments to filter clauses are automatically replaced with [:value <value> <type-info>] clauses by the
 ;; `wrap-value-literals` middleware. This is done to make it easier to implement query processors, because most driver
@@ -504,6 +505,11 @@
 (defclause ^:sugar is-null,  field Field)
 (defclause ^:sugar not-null, field Field)
 
+;; These are rewritten as `[:or [:= <field> nil] [:= <field> ""]]` and
+;; `[:and [:not= <field> nil] [:not= <field> ""]]`
+(defclause ^:sugar is-empty,  field Field)
+(defclause ^:sugar not-empty, field Field)
+
 (def ^:private StringFilterOptions
   {(s/optional-key :case-sensitive) s/Bool}) ; default true
 
@@ -556,7 +562,7 @@
     ;; filters drivers must implement
     and or not = != < > <= >= between starts-with ends-with contains
     ;; SUGAR filters drivers do not need to implement
-    does-not-contain inside is-null not-null time-interval segment)))
+    does-not-contain inside is-empty not-empty is-null not-null time-interval segment)))
 
 (def Filter
   "Schema for a valid MBQL `:filter` clause."

@@ -53,8 +53,9 @@
 
 (defn- add-tables [dbs]
   (let [db-id->tables (group-by :db_id (filter mi/can-read? (db/select Table
-                                                              :active true
-                                                              :db_id  [:in (map :id dbs)]
+                                                              :active          true
+                                                              :db_id           [:in (map :id dbs)]
+                                                              :visibility_type nil
                                                               {:order-by [[:%lower.schema :asc]
                                                                           [:%lower.display_name :asc]]})))]
     (for [db dbs]
@@ -172,6 +173,12 @@
       include-tables?             add-tables
       include-saved-questions-db? (add-saved-questions-virtual-database :include-tables? include-saved-questions-tables?))))
 
+(def FetchAllIncludeValues
+  "Schema for matching the include parameter of the GET / endpoint"
+  (su/with-api-error-message
+    (s/maybe (s/eq "tables"))
+    (deferred-tru "include must be either empty or the value 'tables'")))
+
 (api/defendpoint GET "/"
   "Fetch all `Databases`.
 
@@ -188,7 +195,7 @@
   [include_tables include_cards include saved]
   {include_tables (s/maybe su/BooleanString)
    include_cards  (s/maybe su/BooleanString)
-   include        (s/maybe (s/eq "tables"))
+   include        FetchAllIncludeValues
    saved          (s/maybe su/BooleanString)}
   (when (and config/is-dev?
              (or include_tables include_cards))
@@ -233,6 +240,10 @@
   [db]
   (assoc db :schedules (expanded-schedules db)))
 
+(defn- filter-sensitive-fields
+  [fields]
+  (remove #(= :sensitive (:visibility_type %)) fields))
+
 (defn- get-database-hydrate-include
   "If URL param `?include=` was passed to `GET /api/database/:id`, hydrate the Database appropriately."
   [db include]
@@ -241,7 +252,12 @@
     (-> (hydrate db (case include
                       "tables"        :tables
                       "tables.fields" [:tables [:fields [:target :has_field_values] :has_field_values]]))
-        (update :tables (partial filter mi/can-read?)))))
+        (update :tables (fn [tables]
+                          (cond->> tables
+                            ; filter hidden tables
+                            true                        (filter (every-pred (complement :visibility_type) mi/can-read?))
+                            ; filter hidden fields
+                            (= include "tables.fields") (map #(update % :fields filter-sensitive-fields))))))))
 
 (api/defendpoint GET "/:id"
   "Get a single Database with `id`. Optionally pass `?include=tables` or `?include=tables.fields` to include the Tables
@@ -265,9 +281,15 @@
   []
   (saved-cards-virtual-db-metadata :include-tables? true, :include-fields? true))
 
-(defn- db-metadata [id]
+(defn- db-metadata [id include-hidden?]
   (-> (api/read-check Database id)
       (hydrate [:tables [:fields [:target :has_field_values] :has_field_values] :segments :metrics])
+      (update :tables (if include-hidden?
+                        identity
+                        (fn [tables]
+                          (->> tables
+                               (remove :visibility_type)
+                               (map #(update % :fields filter-sensitive-fields))))))
       (update :tables (fn [tables]
                         (for [table tables
                               :when (mi/can-read? table)]
@@ -277,9 +299,11 @@
 
 (api/defendpoint GET "/:id/metadata"
   "Get metadata about a `Database`, including all of its `Tables` and `Fields`.
+   By default only non-hidden tables and fields are returned. Passing include_hidden=true includes them.
    Returns DB, fields, and field values."
-  [id]
-  (db-metadata id))
+  [id include_hidden]
+  {include_hidden (s/maybe su/BooleanString)}
+  (db-metadata id include_hidden))
 
 
 ;;; --------------------------------- GET /api/database/:id/autocomplete_suggestions ---------------------------------
@@ -664,7 +688,7 @@
 (defn- schema-tables-list [db-id schema]
   (api/read-check Database db-id)
   (api/check-403 (can-read-schema? db-id schema))
-  (filter mi/can-read? (db/select Table :db_id db-id, :schema schema, :active true, {:order-by [[:name :asc]]})))
+  (filter mi/can-read? (db/select Table :db_id db-id, :schema schema, :active true, :visibility_type nil, {:order-by [[:name :asc]]})))
 
 (api/defendpoint GET "/:id/schema/:schema"
   "Returns a list of Tables for the given Database `id` and `schema`"

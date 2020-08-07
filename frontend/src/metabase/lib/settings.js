@@ -14,6 +14,7 @@ export type SettingName =
   | "custom-geojson"
   | "email-configured?"
   | "enable-embedding"
+  | "enable-enhancements?"
   | "enable-public-sharing"
   | "enable-xrays"
   | "engines"
@@ -76,6 +77,10 @@ class Settings {
     return this.get("admin-email");
   }
 
+  enhancementsEnabled() {
+    return this.get("enable-enhancements?");
+  }
+
   isEmailConfigured() {
     return this.get("email-configured?");
   }
@@ -110,12 +115,12 @@ class Settings {
       tag = "latest";
     }
     if (page) {
-      page = `/${page}.html`;
+      page = `${page}.html`;
     }
     if (anchor) {
       anchor = `#${anchor}`;
     }
-    return `https://metabase.com/docs/${tag}${page}${anchor}`;
+    return `https://www.metabase.com/docs/${tag}/${page}${anchor}`;
   }
 
   newVersionAvailable() {
